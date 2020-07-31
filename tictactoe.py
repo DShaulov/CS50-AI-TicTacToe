@@ -3,7 +3,8 @@ Tic Tac Toe Player
 """
 
 import math
-import helpers
+from helpers import StackQueue, Node, explore_board
+from random import randint
 
 X = "X"
 O = "O"
@@ -149,11 +150,11 @@ def terminal(board):
 
     # check if the board is full
     for row in board:
-        if None in row:
+        if EMPTY in row:
             return False
     # if the board is full and no one won, return true
     else:
-        return False
+        return True
 
 def utility(board):
     """
@@ -201,6 +202,16 @@ def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     """
+    # create a node using the input board
+    input_node = Node(
+        parent = None,
+        state = board,
+        value = None
+    )
+    # if board is terminal, return None
+    if terminal(board) == True:
+        return None
+
     # check whose turn it is
     num_x = 0
     num_o = 0
@@ -213,36 +224,87 @@ def minimax(board):
                 num_o = num_o + 1
     
     if num_o == num_x:
-        current_turn = X
+        current_player = X
     else:
-        current_turn = O
+        current_player = O
 
-    # create a stack frontier
+    # create a stack queue
+    stack_queue = StackQueue()
 
-    # add the current board to the frontier
-    raise NotImplementedError
+    # explore the current board
+    possible_boards = explore_board(board)[0]
+    moves = explore_board(board)[1]
+    # keep track of all the possible moves
+    possible_move_nodes = []
+    # create a node for each possible board
+    for board_state in possible_boards:
+        new_node = Node(
+            parent = input_node,
+            state = board_state,
+            value = None
+        )
 
-class StackFrontier():
-    def __init__(self):
-        self.frontier = []
+        # add the new node to the frontier
+        stack_queue.frontier.append(new_node)
+        possible_move_nodes.append(new_node)
+        
+    # continue exploring the frontier while it is not empty
+    while stack_queue.frontier != []:
+        # remove a node from the frontier
+        current_node = stack_queue.remove()
+        # check if current node is terminal
+        if terminal(current_node.state) == True:
+            # check who won the game
+            utility_value = utility(current_node.state)
 
-    def remove(self, node):
-        removed_node = self.frontier[0]
-        self.frontier = self.frontier[1::]
-        return removed_node
+            # assign to each node and its parent nodes the value
+            while current_node.parent != None:
+                current_node.value = utility_value
+                current_node = current_node.parent
+        
+        if terminal(current_node.state) == False:
+            # if current node is not terminal, explore it
+            possible_board_states = explore_board(current_node.state)[0]
 
-class Node():
-    def __init__(self):
-        self.action = action
-        self.parent = parent
-        self.state = state
-        self.value = value
+            # create a node for each board state and add it to the frontier
+            for board_state in possible_board_states:
+                new_node = Node(
+                    parent = current_node,
+                    value = None,
+                    state = board_state
+                )
 
-def explore_board(board):
-    """
-    returns a list of all possible boards
-    """
-    raise NotImplementedError
+                stack_queue.frontier.append(new_node)
+    # once the frontier is empty, go over all the possible moves, and choose at random the ones that match the computers goal
+    if current_player == X:
+        optimal_moves = []
+        for node in possible_move_nodes:
+            if node.value == 1:
+                # get the index of the node
+                node_index = possible_move_nodes.index(node)
+                move = moves(node_index)
+                optimal_moves.append(move)
+
+        # return a random optimal move
+        random_index = randint(0, len(optimal_moves) - 1)
+        return optimal_moves[random_index]
+    
+    if current_player == O:
+        optimal_moves = []
+        for node in possible_move_nodes:
+            if node.value == -1:
+                # get the index of the node
+                node_index = possible_move_nodes.index(node)
+                move = moves(node_index)
+                optimal_moves.append(move)
+
+        # return a random optimal move
+        random_index = randint(0, len(optimal_moves) - 1)
+        return optimal_moves[random_index]
+        
+        
+
+
 
 
 
